@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Thư Viện - Glass UI</title>
+    
+    <!-- 1. Thư viện CSS hỗ trợ (Tailwind cho layout nhanh + FontAwesome cho icon) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 2. Custom CSS cho hiệu ứng Glassmorphism -->
+    <style>
+        /* Font chữ */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow: hidden; /* Ẩn thanh cuộn ngoài cùng */
+        }
+
+        /* --- BACKGROUND ANIMATION --- */
+        .glass-bg-animation {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: float 10s infinite ease-in-out;
+        }
+        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: rgba(79, 70, 229, 0.2); animation-delay: 0s; }
+        .orb-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: rgba(236, 72, 153, 0.2); animation-delay: -5s; }
+        .orb-3 { top: 40%; left: 40%; width: 20vw; height: 20vw; background: rgba(59, 130, 246, 0.2); animation-delay: -2s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* --- GLASS COMPONENTS --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Table Glass Effect */
+        .glass-table tr {
+            transition: background 0.3s;
+        }
+        .glass-table tr:hover td {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .glass-table td {
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-table td:first-child { border-left: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px 0 0 12px; }
+        .glass-table td:last-child { border-right: 1px solid rgba(255, 255, 255, 0.05); border-radius: 0 12px 12px 0; }
+
+        /* Input Glass */
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: rgba(168, 85, 247, 0.5);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Navigation Active State */
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .nav-item.active i { color: #c084fc; } /* Tím nhạt */
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="flex h-screen">
+
+    <!-- Background -->
+    <div class="glass-bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="w-72 p-4 flex flex-col z-10">
+        <div class="glass-panel h-full rounded-2xl flex flex-col p-6">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 mb-10 px-2">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-book-open text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide text-white">GlassLib</h1>
+                    <p class="text-xs text-slate-400">Admin Panel</p>
+                </div>
+            </div>
+
+            <!-- Menu -->
+            <nav class="flex-1 space-y-2">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 transition-all group">
+                    <i class="fa-solid fa-chart-pie w-6 transition-colors group-hover:text-white"></i>
+                    <span class="font-medium">Tổng Quan</span>
+                </button>
+                <button onclick="switchTab('books')" id="nav-books" class="nav-item w-full flex items-center px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 transition-all group">
+                    <i class="fa-solid fa-book w-6 transition-colors group-hover:text-white"></i>
+                    <span class="font-medium">Kho Sách</span>
+                </button>
+                <button onclick="switchTab('members')" id="nav-members" class="nav-item w-full flex items-center px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 transition-all group">
+                    <i class="fa-solid fa-users w-6 transition-colors group-hover:text-white"></i>
+                    <span class="font-medium">Độc Giả</span>
+                </button>
+                <button onclick="switchTab('circulation')" id="nav-circulation" class="nav-item w-full flex items-center px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 transition-all group">
+                    <i class="fa-solid fa-right-left w-6 transition-colors group-hover:text-white"></i>
+                    <span class="font-medium">Mượn / Trả</span>
+                </button>
+            </nav>
+
+            <!-- Footer Sidebar -->
+            <div class="pt-6 border-t border-white/10 mt-auto">
+                <button class="flex items-center gap-3 text-slate-400 hover:text-rose-400 transition-colors w-full px-2">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-4 pl-0 h-screen flex flex-col relative z-10 overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="glass-panel h-20 rounded-2xl mb-4 px-8 flex items-center justify-between mx-4 mt-0 shrink-0">
+            <div>
+                <h2 id="page-title" class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-200 to-purple-200">
+                    Tổng Quan Hệ Thống
+                </h2>
+                <p class="text-xs text-slate-400">Chào mừng trở lại, Administrator</p>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <!-- Search Global -->
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Tìm kiếm nhanh..." class="glass-input rounded-full px-4 py-1.5 w-64 text-sm pl-10 focus:ring-1 focus:ring-purple-400 transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                </div>
+
+                <div class="h-8 w-[1px] bg-white/10"></div>
+
+                <!-- User Profile -->
+                <div class="flex items-center gap-3 cursor-pointer">
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-bold text-white">Thủ Thư A</p>
+                        <p class="text-xs text-slate-400">Quản lý kho</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Thu+Thu&background=6366f1&color=fff" class="w-10 h-10 rounded-full border-2 border-white/20 p-0.5">
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT SCROLL AREA -->
+        <div id="content-area" class="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="space-y-6 animate-fade-in">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Card 1 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/20 rounded-bl-full -mr-4 -mt-4 blur-xl"></div>
+                        <p class="text-slate-400 text-sm font-medium">Tổng đầu sách</p>
+                        <div class="flex items-end justify-between mt-2">
+                            <h3 class="text-3xl font-bold text-white">1,248</h3>
+                            <span class="text-xs font-bold px-2 py-1 rounded bg-emerald-500/20 text-emerald-300">+12%</span>
+                        </div>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/20 rounded-bl-full -mr-4 -mt-4 blur-xl"></div>
+                        <p class="text-slate-400 text-sm font-medium">Đang cho mượn</p>
+                        <div class="flex items-end justify-between mt-2">
+                            <h3 class="text-3xl font-bold text-white">142</h3>
+                            <span class="text-xs font-bold px-2 py-1 rounded bg-blue-500/20 text-blue-300">Active</span>
+                        </div>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-pink-500/20 rounded-bl-full -mr-4 -mt-4 blur-xl"></div>
+                        <p class="text-slate-400 text-sm font-medium">Độc giả</p>
+                        <div class="flex items-end justify-between mt-2">
+                            <h3 class="text-3xl font-bold text-white">856</h3>
+                            <span class="text-xs font-bold px-2 py-1 rounded bg-emerald-500/20 text-emerald-300">+5 mới</span>
+                        </div>
+                    </div>
+                    <!-- Card 4 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/20 rounded-bl-full -mr-4 -mt-4 blur-xl"></div>
+                        <p class="text-slate-400 text-sm font-medium">Quá hạn</p>
+                        <div class="flex items-end justify-between mt-2">
+                            <h3 class="text-3xl font-bold text-white">12</h3>
+                            <span class="text-xs font-bold px-2 py-1 rounded bg-rose-500/20 text-rose-300">Cần xử lý</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Charts Placeholder -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel lg:col-span-2 rounded-2xl p-6 h-80 flex flex-col justify-center items-center text-slate-500">
+                        <i class="fa-solid fa-chart-line text-4xl mb-2 opacity-50"></i>
+                        <p>Biểu đồ thống kê mượn trả (Placeholder)</p>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-6">
+                        <h3 class="font-bold text-white mb-4">Hoạt động gần đây</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300 text-xs font-bold">A</div>
+                                <div>
+                                    <p class="text-sm text-slate-200">Nguyễn Văn A <span class="text-slate-500">mượn</span> Python</p>
+                                    <p class="text-xs text-slate-500">2 phút trước</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-300 text-xs font-bold">B</div>
+                                <div>
+                                    <p class="text-sm text-slate-200">Trần Thị B <span class="text-slate-500">trả</span> Clean Code</p>
+                                    <p class="text-xs text-slate-500">15 phút trước</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: BOOKS MANAGER -->
+            <div id="view-books" class="hidden space-y-6 h-full flex flex-col animate-fade-in">
+                <!-- Toolbar -->
+                <div class="glass-panel p-4 rounded-2xl flex justify-between items-center">
+                    <div class="relative">
+                        <input type="text" id="book-search" onkeyup="filterBooks()" placeholder="Tìm tên sách, tác giả..." class="glass-input rounded-xl pl-10 pr-4 py-2 w-72 text-sm focus:ring-1 focus:ring-purple-400 transition-all">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                    <button class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-lg shadow-purple-500/30 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Thêm sách mới
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="glass-panel rounded-2xl p-6 flex-1 overflow-auto">
+                    <table class="w-full text-left glass-table border-separate border-spacing-y-2">
+                        <thead>
+                            <tr class="text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="px-4 py-2 font-medium">ID</th>
+                                <th class="px-4 py-2 font-medium">Tên Sách</th>
+                                <th class="px-4 py-2 font-medium">Tác Giả</th>
+                                <th class="px-4 py-2 font-medium">Danh Mục</th>
+                                <th class="px-4 py-2 font-medium text-center">Tồn Kho</th>
+                                <th class="px-4 py-2 font-medium">Trạng Thái</th>
+                                <th class="px-4 py-2 font-medium text-right">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="book-table-body" class="text-sm text-slate-200">
+                            <!-- JS will populate rows here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: OTHER (Placeholder) -->
+            <div id="view-other" class="hidden h-full flex items-center justify-center">
+                 <div class="text-center text-slate-500 glass-panel p-10 rounded-2xl">
+                    <i class="fa-solid fa-person-digging text-4xl mb-4 opacity-50"></i>
+                    <p class="text-xl font-medium">Tính năng đang phát triển</p>
+                    <p class="text-sm mt-2">Vui lòng quay lại sau</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // 1. MOCK DATA
+        const booksData = [
+            { id: 1, title: "Dế Mèn Phiêu Lưu Ký", author: "Tô Hoài", category: "Thiếu nhi", qty: 5, status: "Sẵn có" },
+            { id: 2, title: "Nhà Giả Kim", author: "Paulo Coelho", category: "Tiểu thuyết", qty: 3, status: "Hết sách" },
+            { id: 3, title: "Đắc Nhân Tâm", author: "Dale Carnegie", category: "Kỹ năng", qty: 10, status: "Sẵn có" },
+            { id: 4, title: "Clean Code", author: "Robert C. Martin", category: "Công nghệ", qty: 2, status: "Sẵn có" },
+            { id: 5, title: "Sapiens: Lược sử", author: "Yuval Noah Harari", category: "Lịch sử", qty: 4, status: "Sẵn có" },
+            { id: 6, title: "Mắt Biếc", author: "Nguyễn Nhật Ánh", category: "Truyện dài", qty: 6, status: "Sẵn có" },
+        ];
+
+        // 2. RENDER TABLE FUNCTION
+        function renderBooks(data) {
+            const tbody = document.getElementById('book-table-body');
+            tbody.innerHTML = ''; // Clear current
+
+            data.forEach(book => {
+                const statusClass = book.status === 'Sẵn có' 
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                    : 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+                
+                const row = `
+                    <tr class="group">
+                        <td class="px-4 py-3 font-mono text-slate-400">#${book.id}</td>
+                        <td class="px-4 py-3 font-bold text-white">${book.title}</td>
+                        <td class="px-4 py-3 text-slate-300">${book.author}</td>
+                        <td class="px-4 py-3"><span class="bg-white/10 px-2 py-1 rounded text-xs border border-white/10">${book.category}</span></td>
+                        <td class="px-4 py-3 text-center">${book.qty}</td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs px-2 py-1 rounded-full border ${statusClass}">${book.status}</span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <button class="text-slate-400 hover:text-blue-400 transition-colors mr-2"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button class="text-slate-400 hover:text-rose-400 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // 3. TAB SWITCHING LOGIC
+        function switchTab(tabName) {
+            // Hide all views
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-books').classList.add('hidden');
+            document.getElementById('view-other').classList.add('hidden');
+
+            // Deactivate all nav items
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            // Show selected view & Activate nav item
+            if (tabName === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                document.getElementById('nav-dashboard').classList.add('active');
+                document.getElementById('page-title').innerText = "Tổng Quan Hệ Thống";
+            } else if (tabName === 'books') {
+                document.getElementById('view-books').classList.remove('hidden');
+                document.getElementById('nav-books').classList.add('active');
+                document.getElementById('page-title').innerText = "Quản Lý Kho Sách";
+                renderBooks(booksData); // Re-render data when tab opens
+            } else {
+                document.getElementById('view-other').classList.remove('hidden');
+                document.getElementById('nav-' + tabName).classList.add('active');
+                document.getElementById('page-title').innerText = "Đang phát triển";
+            }
+        }
+
+        // 4. SEARCH LOGIC
+        function filterBooks() {
+            const input = document.getElementById('book-search').value.toLowerCase();
+            const filteredData = booksData.filter(book => 
+                book.title.toLowerCase().includes(input) || 
+                book.author.toLowerCase().includes(input)
+            );
+            renderBooks(filteredData);
+        }
+
+        // Init
+        window.onload = () => {
+            renderBooks(booksData); // Load data initially
+        };
+
+    </script>
+</body>
+</html>
+

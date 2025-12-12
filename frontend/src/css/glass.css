@@ -1,0 +1,68 @@
+/* Extracted from test.html - Glassmorphism styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg-start: #0f172a;
+  --bg-end: #1e1b4b;
+}
+
+body.glass-theme {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+  color: #e2e8f0;
+}
+
+.glass-bg-animation {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: -1;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: float 10s infinite ease-in-out; }
+.orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: rgba(79, 70, 229, 0.2); animation-delay: 0s; }
+.orb-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: rgba(236, 72, 153, 0.2); animation-delay: -5s; }
+.orb-3 { top: 40%; left: 40%; width: 20vw; height: 20vw; background: rgba(59, 130, 246, 0.2); animation-delay: -2s; }
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(30px, -30px);
+  }
+}
+
+
+.glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 30px rgba(0,0,0,0.1); }
+
+.glass-table tr { transition: background 0.3s; }
+.glass-table tr:hover td { background: rgba(255,255,255,0.08); }
+.glass-table td { background: rgba(255,255,255,0.03); border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05); }
+.glass-table td:first-child { border-left:1px solid rgba(255,255,255,0.05); border-radius:12px 0 0 12px; }
+.glass-table td:last-child { border-right:1px solid rgba(255,255,255,0.05); border-radius:0 12px 12px 0; }
+
+.glass-input { background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; }
+.glass-input:focus { outline:none; border-color: rgba(168,85,247,0.5); background: rgba(0,0,0,0.4); }
+
+.nav-item.active { background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:white; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.nav-item.active i { color: #c084fc; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* Add lightweight entry animations used by pages */
+@keyframes pop-in {
+  0% { transform: translateY(-6px) scale(0.98); opacity: 0; }
+  60% { transform: translateY(2px) scale(1.01); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.animate-add { animation: pop-in 420ms cubic-bezier(.2,.9,.3,1); }
+
+/* simple page fade (used by container classes) */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 360ms ease both; }

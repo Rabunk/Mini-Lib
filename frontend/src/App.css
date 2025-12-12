@@ -1,0 +1,11 @@
+/* Minimal layout helpers */
+.container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+.row { display: flex; flex-wrap: wrap; gap: 1rem; }
+.col-3 { width: 25%; }
+.col-9 { width: 75%; }
+
+/* small helpers for text/colors consistent with glass theme */
+.text-center { text-align: center; }
+.fw-bold { font-weight: 700; }
+.fs-2 { font-size: 1.5rem; }
+
