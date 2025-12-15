@@ -18,7 +18,7 @@ export default function Sidebar() {
             <i className="fa-solid fa-book-open text-white"></i>
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-wide text-white">GlassLib</h1>
+            <h1 className="font-bold text-lg tracking-wide text-white">Mini-Library</h1>
             <p className="text-xs text-slate-400">Admin Panel</p>
           </div>
         </div>

@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { library as initialLibrary } from '../data/library'
+
+const CATEGORIES = ['Thiếu nhi', 'Truyện tranh', 'Lịch sử', 'Khoa học', 'Tiểu thuyết', 'Văn học']
 
 export default function BookManagement(){
   const [books, setBooks] = useState(() => {
@@ -8,46 +10,67 @@ export default function BookManagement(){
     return s ? JSON.parse(s) : (initialLibrary || [])
   })
   const [query, setQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editIndex, setEditIndex] = useState(-1)
-  const [form, setForm] = useState({ title:'', author:'', category:'', qty:0, status:'Sẵn có' })
+  const [form, setForm] = useState({ title:'', author:'', category:'', qty:0 })
   const [newRowId, setNewRowId] = useState(null)
 
-  React.useEffect(() => {
+  const [titleError, setTitleError] = useState('')
+  const [authorError, setAuthorError] = useState('')
+
+  useEffect(() => {
     localStorage.setItem('gl_lib_books', JSON.stringify(books))
   }, [books])
+
+  const validate = () => {
+    let ok = true
+    if (!form.title || form.title.trim().length < 5) {
+      setTitleError('Tên sách phải ít nhất 5 ký tự')
+      ok = false
+    } else setTitleError('')
+    if (!form.author || form.author.trim().length < 8) {
+      setAuthorError('Tên tác giả phải ít nhất 8 ký tự')
+      ok = false
+    } else setAuthorError('')
+    return ok
+  }
 
   const handleSearch = (e) => setQuery(e.target.value || '')
 
   const filtered = books.filter(b =>
-    b.title.toLowerCase().includes(query.toLowerCase()) ||
-    b.author.toLowerCase().includes(query.toLowerCase())
+    (b.title.toLowerCase().includes(query.toLowerCase()) ||
+     b.author.toLowerCase().includes(query.toLowerCase()))
+    && (categoryFilter ? b.category === categoryFilter : true)
   )
 
   const openAdd = () => {
     setEditIndex(-1)
-    setForm({ title:'', author:'', category:'', qty:0, status:'Sẵn có' })
+    setForm({ title:'', author:'', category: CATEGORIES[0], qty:0 })
+    setTitleError(''); setAuthorError('')
     setModalOpen(true)
   }
 
   const openEdit = (idx) => {
     setEditIndex(idx)
     const b = books[idx]
-    setForm({ title: b.title, author: b.author, category: b.category, qty: b.qty, status: b.status })
+    setForm({ title: b.title, author: b.author, category: b.category || CATEGORIES[0], qty: b.qty || 0 })
+    setTitleError(''); setAuthorError('')
     setModalOpen(true)
   }
 
   const save = () => {
-    if (!form.title) return
+    if (!validate()) return
     const copy = [...books]
+    const status = (Number(form.qty) > 0) ? 'Sẵn có' : 'Hết sách'
     if (editIndex === -1) {
-      const newItem = { id: `B${Date.now()}`, ...form }
+      const newItem = { id: `B${Date.now()}`, ...form, qty: Number(form.qty), status }
       copy.unshift(newItem)
       setBooks(copy)
       setNewRowId(newItem.id)
       setTimeout(() => setNewRowId(null), 700)
     } else {
-      copy[editIndex] = { ...copy[editIndex], ...form }
+      copy[editIndex] = { ...copy[editIndex], ...form, qty: Number(form.qty), status }
       setBooks(copy)
     }
     setModalOpen(false)
@@ -79,10 +102,17 @@ export default function BookManagement(){
       </div>
 
       <div className="glass-panel p-4 rounded-2xl flex justify-between items-center">
-        <div className="relative">
-          <input value={query} onChange={handleSearch} placeholder="Tìm tên sách, tác giả..." className="glass-input rounded-xl pl-10 pr-4 py-2 w-72 text-sm" />
-          <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input value={query} onChange={handleSearch} placeholder="Tìm tên sách, tác giả..." className="glass-input rounded-xl pl-10 pr-4 py-2 w-72 text-sm" />
+            <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          </div>
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="glass-input rounded-xl px-3 py-2 text-sm">
+            <option value=''>Tất cả danh mục</option>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
+
         <button onClick={openAdd} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-lg shadow-purple-500/30 transition-all flex items-center gap-2">
           <i className="fa-solid fa-plus"></i> Thêm sách mới
         </button>
@@ -132,19 +162,23 @@ export default function BookManagement(){
               <div>
                 <label className="text-sm text-slate-300">Tên sách</label>
                 <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.title} onChange={e => setForm(f => ({...f, title: e.target.value}))} />
+                {titleError && <div className="text-rose-400 text-sm mt-1">{titleError}</div>}
               </div>
               <div>
                 <label className="text-sm text-slate-300">Tác giả</label>
                 <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.author} onChange={e => setForm(f => ({...f, author: e.target.value}))} />
+                {authorError && <div className="text-rose-400 text-sm mt-1">{authorError}</div>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm text-slate-300">Danh mục</label>
-                  <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.category} onChange={e => setForm(f => ({...f, category: e.target.value}))} />
+                  <select className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.category} onChange={e => setForm(f => ({...f, category: e.target.value}))}>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="text-sm text-slate-300">Số lượng</label>
-                  <input type="number" className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.qty} onChange={e => setForm(f => ({...f, qty: Number(e.target.value)}))} />
+                  <input type="number" min="0" className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.qty} onChange={e => setForm(f => ({...f, qty: Number(e.target.value)}))} />
                 </div>
               </div>
 

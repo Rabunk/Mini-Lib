@@ -16,8 +16,8 @@ export default function BorrowAndReturn() {
   const [loans, setLoans] = useState(() => {
     const s = localStorage.getItem('gl_lib_loans')
     return s ? JSON.parse(s) : [
-      { id: 'PM001', member: 'Nguyễn Văn A', book: 'Nhà Giả Kim', date: '2023-10-25', status: 'Đang mượn' },
-      { id: 'PM002', member: 'Trần Thị B', book: 'Tuổi Trẻ Đáng Giá Bao Nhiêu', date: '2023-10-20', status: 'Đã trả' }
+      { id: 'PM001', member: 'Nguyễn Văn A', book: 'Nhà Giả Kim', date: '2023-10-25', dueDate: '2023-11-08', status: 'Đang mượn', fine: null },
+      { id: 'PM002', member: 'Trần Thị B', book: 'Tuổi Trẻ Đáng Giá Bao Nhiêu', date: '2023-10-20', dueDate: '2023-11-03', status: 'Đã trả', fine: null }
     ]
   })
 
@@ -26,10 +26,19 @@ export default function BorrowAndReturn() {
   const [selectedLoanId, setSelectedLoanId] = useState(null)
   const [selectedReaderId, setSelectedReaderId] = useState('')
   const [selectedBookId, setSelectedBookId] = useState('')
+  const [loanDueDate, setLoanDueDate] = useState('') // <-- added
+
+  // return modal fields
+  const [returnFine, setReturnFine] = useState(0)
+  const [returnNote, setReturnNote] = useState('')
 
   useEffect(() => {
     localStorage.setItem('gl_lib_loans', JSON.stringify(loans))
   }, [loans])
+
+  useEffect(() => {
+    localStorage.setItem('gl_lib_books', JSON.stringify(books))
+  }, [books])
 
   const handleSearch = (e) => setQuery(e.target.value || '')
 
@@ -42,17 +51,35 @@ export default function BorrowAndReturn() {
   const openLoanModal = () => {
     setSelectedReaderId(users[0]?.id || '')
     setSelectedBookId(books[0]?.id || '')
+    const due = new Date(); due.setDate(due.getDate() + 14)
+    setLoanDueDate(due.toISOString().split('T')[0]) // default 14 days
     setLoanModal(true)
   }
 
   const createLoan = () => {
-    if (!selectedReaderId || !selectedBookId) return
+    if (!selectedReaderId || !selectedBookId || !loanDueDate) return
+    const chosenBook = books.find(b => b.id === selectedBookId)
+    if (!chosenBook || chosenBook.qty <= 0) {
+      alert('Sách không có sẵn để mượn')
+      return
+    }
+
+    // reduce stock
+    setBooks(prev => prev.map(b => b.id === selectedBookId ? { ...b, qty: b.qty - 1, status: (b.qty - 1) > 0 ? 'Sẵn có' : 'Hết sách' } : b))
+
+    // determine status by due date
+    const dueDateObj = new Date(loanDueDate)
+    const today = new Date()
+    const status = (!isNaN(dueDateObj) && dueDateObj < new Date(today.toDateString())) ? 'Quá hạn' : 'Đang mượn'
+
     const newLoan = {
       id: `PM${String(loans.length + 1).padStart(3,'0')}`,
       member: users.find(u => u.id === selectedReaderId)?.name || selectedReaderId,
-      book: books.find(b => b.id === selectedBookId)?.title || selectedBookId,
+      book: chosenBook.title,
       date: new Date().toISOString().split('T')[0],
-      status: 'Đang mượn'
+      dueDate: loanDueDate,
+      status,
+      fine: null
     }
     setLoans(l => [newLoan, ...l])
     setLoanModal(false)
@@ -60,11 +87,21 @@ export default function BorrowAndReturn() {
 
   const openReturnModal = (loanId) => {
     setSelectedLoanId(loanId)
+    setReturnFine(0)
+    setReturnNote('')
     setReturnModal(true)
   }
 
   const processReturn = (loanId) => {
-    setLoans(l => l.map(x => x.id === loanId ? { ...x, status: 'Đã trả' } : x))
+    // mark loan returned, attach fine if any
+    setLoans(l => l.map(x => x.id === loanId ? { ...x, status: 'Đã trả', fine: returnFine ? { amount: Number(returnFine), note: returnNote } : null, returnedAt: new Date().toISOString().split('T')[0] } : x))
+
+    // increment book qty by title match
+    const loan = loans.find(x => x.id === loanId)
+    if (loan) {
+      setBooks(prev => prev.map(b => b.title === loan.book ? { ...b, qty: (Number(b.qty) || 0) + 1, status: ((Number(b.qty) || 0) + 1) > 0 ? 'Sẵn có' : 'Hết sách' } : b))
+    }
+
     setReturnModal(false)
   }
 
@@ -113,6 +150,7 @@ export default function BorrowAndReturn() {
               <th className="px-4 py-2 font-medium">Độc giả</th>
               <th className="px-4 py-2 font-medium">Sách</th>
               <th className="px-4 py-2 font-medium">Ngày mượn</th>
+              <th className="px-4 py-2 font-medium">Hạn trả</th> {/* <-- added */}
               <th className="px-4 py-2 font-medium">Trạng thái</th>
               <th className="px-4 py-2 font-medium text-right">Hành động</th>
             </tr>
@@ -122,17 +160,22 @@ export default function BorrowAndReturn() {
               <tr key={t.id} className="group">
                 <td className="px-4 py-3 font-mono text-slate-400 align-middle">{t.id}</td>
                 <td className="px-4 py-3 font-bold text-white align-middle">{t.member}</td>
-                <td className="px-4 py-3 text-slate-300 align-middle">{t.book}</td>
+                <td className="px-4 py-3 text-slate-300 align-middle">
+                  {t.book}{t.fine && t.fine.amount ? ` (${Number(t.fine.amount).toLocaleString('vi-VN')} vnđ)` : ''}
+                </td>
                 <td className="px-4 py-3 text-slate-300 align-middle">{t.date}</td>
+                <td className="px-4 py-3 text-slate-300 align-middle">{t.dueDate || '-'}</td> {/* <-- show due date */}
                 <td className="px-4 py-3 align-middle">
                   {t.status === 'Đang mượn' ? (
                     <span className="text-xs px-2 py-1 rounded-full border bg-amber-500/20 text-amber-300 border-amber-500/30">{t.status}</span>
+                  ) : t.status === 'Quá hạn' ? (
+                    <span className="text-xs px-2 py-1 rounded-full border bg-rose-500/20 text-rose-300 border-rose-500/30">{t.status}</span>
                   ) : (
                     <span className="text-xs px-2 py-1 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">{t.status}</span>
                   )}
                 </td>
                 <td className="px-4 py-3 align-middle text-right">
-                  {t.status === 'Đang mượn' ? (
+                  {t.status === 'Đang mượn' || t.status === 'Quá hạn' ? (
                     <button onClick={() => openReturnModal(t.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white/5 text-blue-400 hover:bg-white/8">
                       <i className="fa-solid fa-rotate-left"></i> Trả sách
                     </button>
@@ -146,7 +189,7 @@ export default function BorrowAndReturn() {
         </table>
       </div>
 
-      {/* Loan modal (portal so overlay covers entire viewport & sidebar) */}
+      {/* Loan modal (selects + due date) */}
       {loanModal && ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
           <div className="glass-panel p-6 rounded-2xl w-[520px]">
@@ -154,15 +197,20 @@ export default function BorrowAndReturn() {
             <div className="space-y-3">
               <div>
                 <label className="text-sm text-slate-300">Chọn độc giả</label>
-                <select value={selectedReaderId} onChange={e => setSelectedReaderId(e.target.value)} className="glass-input mt-2 w-full rounded-lg px-3 py-2">
+                <select value={selectedReaderId} onChange={e => setSelectedReaderId(e.target.value)} className="glass-input glass-select mt-2 w-full rounded-lg px-3 py-2">
                   {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.id})</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-sm text-slate-300">Chọn sách</label>
-                <select value={selectedBookId} onChange={e => setSelectedBookId(e.target.value)} className="glass-input mt-2 w-full rounded-lg px-3 py-2">
-                  {books.map(b => <option key={b.id} value={b.id}>{b.title}</option>)}
+                <select value={selectedBookId} onChange={e => setSelectedBookId(e.target.value)} className="glass-input glass-select mt-2 w-full rounded-lg px-3 py-2">
+                  {books.map(b => <option key={b.id} value={b.id}>{b.title} — {b.qty} có</option>)}
                 </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-slate-300">Hạn trả</label>
+                <input type="date" value={loanDueDate} onChange={e => setLoanDueDate(e.target.value)} className="glass-input mt-2 w-full rounded-lg px-3 py-2" />
               </div>
 
               <div className="flex justify-end gap-3">
@@ -175,13 +223,23 @@ export default function BorrowAndReturn() {
         document.body
       )}
 
-      {/* Return modal (portal) */}
+      {/* Return modal (allow fine) */}
       {returnModal && ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
           <div className="glass-panel p-6 rounded-2xl w-[520px]">
             <h3 className="font-bold text-white mb-4">Xác nhận trả sách</h3>
             <p className="text-slate-300 mb-4">Bạn có chắc muốn đánh dấu phiếu <b>{selectedLoanId}</b> là đã trả?</p>
-            <div className="flex justify-end gap-3">
+
+            <div>
+              <label className="text-sm text-slate-300">Phí phạt (VNĐ)</label>
+              <input type="number" min="0" className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={returnFine} onChange={e => setReturnFine(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-slate-300">Ghi chú</label>
+              <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={returnNote} onChange={e => setReturnNote(e.target.value)} />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-4">
               <button onClick={() => setReturnModal(false)} className="px-4 py-2 rounded-lg bg-white/5 text-slate-300">Hủy</button>
               <button onClick={() => processReturn(selectedLoanId)} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white">Xác nhận</button>
             </div>

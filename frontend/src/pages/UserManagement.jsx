@@ -11,14 +11,16 @@ export default function UserManagement() {
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ id:'', name:'', phone:'', registered: '' })
   const [newRowId, setNewRowId] = useState(null)
+  const [editIndex, setEditIndex] = useState(-1)
 
-  // sync
+  const [nameError, setNameError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+
   useEffect(() => {
     localStorage.setItem('gl_lib_users', JSON.stringify(data))
   }, [data])
 
   const handleSearch = (e) => {
-    const v = e.target.value.toLowerCase()
     setQuery(e.target.value)
   }
 
@@ -30,18 +32,37 @@ export default function UserManagement() {
   )
 
   const openAdd = () => {
+    setEditIndex(-1)
     setForm({ id: `DG${String(data.length+1).padStart(3,'0')}`, name:'', phone:'', registered: new Date().toISOString().split('T')[0] })
+    setNameError(''); setPhoneError('')
     setModalOpen(true)
   }
 
+  const openEdit = (idx) => {
+    setEditIndex(idx)
+    const u = data[idx]
+    setForm({ id: u.id, name: u.name, phone: u.phone, registered: u.registered || '' })
+    setNameError(''); setPhoneError('')
+    setModalOpen(true)
+  }
+
+  const validate = () => {
+    let ok = true
+    if (!form.name || form.name.trim().length < 8) { setNameError('Họ và tên phải ít nhất 8 ký tự'); ok = false } else setNameError('')
+    const digits = (form.phone || '').replace(/\D/g,'')
+    if (!digits || digits.length < 10) { setPhoneError('Số điện thoại phải ít nhất 10 chữ số'); ok = false } else setPhoneError('')
+    return ok
+  }
+
   const save = () => {
-    if (!form.id || !form.name) return
-    setData(d => {
-      const next = [form, ...d]
-      return next
-    })
-    setNewRowId(form.id)
-    setTimeout(() => setNewRowId(null), 700)
+    if (!validate()) return
+    if (editIndex === -1) {
+      setData(d => [form, ...d])
+      setNewRowId(form.id)
+      setTimeout(() => setNewRowId(null), 700)
+    } else {
+      setData(d => d.map((x,i) => i === editIndex ? form : x))
+    }
     setModalOpen(false)
   }
 
@@ -97,14 +118,14 @@ export default function UserManagement() {
             </tr>
           </thead>
           <tbody className="text-sm text-slate-200">
-            {filtered.map(u => (
+            {filtered.map((u, idx) => (
               <tr key={u.id} className={`group ${u.id === newRowId ? 'animate-add' : ''}`}>
                 <td className="px-4 py-3 font-mono text-slate-400">{u.id}</td>
                 <td className="px-4 py-3 font-bold text-white">{u.name}</td>
                 <td className="px-4 py-3 text-slate-300">{u.phone}</td>
                 <td className="px-4 py-3 text-slate-300">{u.registered}</td>
                 <td className="px-4 py-3 text-right">
-                  <button className="text-slate-400 hover:text-blue-400 transition-colors mr-2"><i className="fa-solid fa-pen-to-square"></i></button>
+                  <button onClick={() => openEdit(idx)} className="text-slate-400 hover:text-blue-400 transition-colors mr-2"><i className="fa-solid fa-pen-to-square"></i></button>
                   <button onClick={() => remove(u.id)} className="text-slate-400 hover:text-rose-400 transition-colors"><i className="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
@@ -116,7 +137,7 @@ export default function UserManagement() {
       {modalOpen && ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
           <div className="glass-panel p-6 rounded-2xl w-[520px]">
-            <h3 className="font-bold text-white mb-4">Thêm độc giả mới</h3>
+            <h3 className="font-bold text-white mb-4">{editIndex === -1 ? 'Thêm độc giả mới' : 'Chỉnh sửa độc giả'}</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-sm text-slate-300">Mã độc giả</label>
@@ -125,10 +146,12 @@ export default function UserManagement() {
               <div>
                 <label className="text-sm text-slate-300">Họ và tên</label>
                 <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+                {nameError && <div className="text-rose-400 text-sm mt-1">{nameError}</div>}
               </div>
               <div>
                 <label className="text-sm text-slate-300">Số điện thoại</label>
-                <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} />
+                <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value.replace(/\D/g,'')}))} />
+                {phoneError && <div className="text-rose-400 text-sm mt-1">{phoneError}</div>}
               </div>
 
               <div className="flex justify-end gap-3">

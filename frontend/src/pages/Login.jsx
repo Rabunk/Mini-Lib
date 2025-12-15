@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ReactDOM from 'react-dom'
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [successModal, setSuccessModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -25,10 +27,15 @@ export default function Login() {
     const correctPass = 'admin'
     if (username === correctUser && password === correctPass) {
       setError('')
-      navigate('/dashboard')
+      setSuccessModal(true)
       return
     }
     setError('Tên đăng nhập hoặc mật khẩu không đúng')
+  }
+
+  const confirmSuccess = () => {
+    setSuccessModal(false)
+    navigate('/dashboard')
   }
 
   return (
@@ -75,6 +82,21 @@ export default function Login() {
           </div>
         </form>
       </div>
+
+      {successModal &&
+        ReactDOM.createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+            <div className="glass-panel p-6 rounded-2xl w-[420px] text-center">
+              <h3 className="font-bold text-white text-lg mb-2">Đăng nhập thành công</h3>
+              <p className="text-slate-300 mb-4">Bạn đã đăng nhập vào hệ thống.</p>
+              <div className="flex justify-center gap-3">
+                <button onClick={() => setSuccessModal(false)} className="px-4 py-2 rounded-lg bg-white/5 text-slate-300">Huỷ</button>
+                <button onClick={confirmSuccess} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white">Xác nhận</button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
