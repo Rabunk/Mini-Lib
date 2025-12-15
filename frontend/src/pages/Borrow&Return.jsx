@@ -26,9 +26,8 @@ export default function BorrowAndReturn() {
   const [selectedLoanId, setSelectedLoanId] = useState(null)
   const [selectedReaderId, setSelectedReaderId] = useState('')
   const [selectedBookId, setSelectedBookId] = useState('')
-  const [loanDueDate, setLoanDueDate] = useState('') // <-- added
+  const [loanDueDate, setLoanDueDate] = useState('') 
 
-  // return modal fields
   const [returnFine, setReturnFine] = useState(0)
   const [returnNote, setReturnNote] = useState('')
 
@@ -64,10 +63,8 @@ export default function BorrowAndReturn() {
       return
     }
 
-    // reduce stock
     setBooks(prev => prev.map(b => b.id === selectedBookId ? { ...b, qty: b.qty - 1, status: (b.qty - 1) > 0 ? 'Sẵn có' : 'Hết sách' } : b))
 
-    // determine status by due date
     const dueDateObj = new Date(loanDueDate)
     const today = new Date()
     const status = (!isNaN(dueDateObj) && dueDateObj < new Date(today.toDateString())) ? 'Quá hạn' : 'Đang mượn'
@@ -93,10 +90,8 @@ export default function BorrowAndReturn() {
   }
 
   const processReturn = (loanId) => {
-    // mark loan returned, attach fine if any
     setLoans(l => l.map(x => x.id === loanId ? { ...x, status: 'Đã trả', fine: returnFine ? { amount: Number(returnFine), note: returnNote } : null, returnedAt: new Date().toISOString().split('T')[0] } : x))
 
-    // increment book qty by title match
     const loan = loans.find(x => x.id === loanId)
     if (loan) {
       setBooks(prev => prev.map(b => b.title === loan.book ? { ...b, qty: (Number(b.qty) || 0) + 1, status: ((Number(b.qty) || 0) + 1) > 0 ? 'Sẵn có' : 'Hết sách' } : b))
@@ -150,7 +145,7 @@ export default function BorrowAndReturn() {
               <th className="px-4 py-2 font-medium">Độc giả</th>
               <th className="px-4 py-2 font-medium">Sách</th>
               <th className="px-4 py-2 font-medium">Ngày mượn</th>
-              <th className="px-4 py-2 font-medium">Hạn trả</th> {/* <-- added */}
+              <th className="px-4 py-2 font-medium">Hạn trả</th> 
               <th className="px-4 py-2 font-medium">Trạng thái</th>
               <th className="px-4 py-2 font-medium text-right">Hành động</th>
             </tr>

@@ -63,7 +63,6 @@ export default function Dashboard() {
   const months = getLastNMonths(6)
   const monthKeys = months.map(lbl => {
     const parts = lbl.split(' ')
-    // 'Aug 2025' -> year-month
     const d = new Date(lbl)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
