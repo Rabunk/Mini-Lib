@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactDOM from 'react-dom'
+import successImg from '../assets/success.png'
 
 export default function Login() {
   const [username, setUsername] = useState('')
@@ -86,9 +87,9 @@ export default function Login() {
       {successModal &&
         ReactDOM.createPortal(
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
-            <div className="glass-panel p-6 rounded-2xl w-[420px] text-center">
+            <div className="glass-panel h-[400px] p-6 rounded-2xl w-[420px] text-center">
               <h3 className="font-bold text-white text-lg mb-2">Đăng nhập thành công</h3>
-              <p className="text-slate-300 mb-4">Bạn đã đăng nhập vào hệ thống.</p>
+              <img src={successImg} alt="Success" className="mx-auto mb-4 w-56 h-56 rounded-full object-cover mt-4" />
               <div className="flex justify-center gap-3">
                 <button onClick={() => setSuccessModal(false)} className="px-4 py-2 rounded-lg bg-white/5 text-slate-300">Huỷ</button>
                 <button onClick={confirmSuccess} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white">Xác nhận</button>

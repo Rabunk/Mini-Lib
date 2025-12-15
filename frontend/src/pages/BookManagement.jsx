@@ -4,6 +4,21 @@ import { library as initialLibrary } from '../data/library'
 
 const CATEGORIES = ['Thiếu nhi', 'Truyện tranh', 'Lịch sử', 'Khoa học', 'Tiểu thuyết', 'Văn học']
 
+function generateISBN13() {
+  const prefix = '978'
+  let body = ''
+  for (let i = 0; i < 9; i++) body += String(Math.floor(Math.random() * 10))
+  const partial = prefix + body 
+  let sum = 0
+  for (let i = 0; i < partial.length; i++) {
+    const n = Number(partial[i])
+    sum += (i % 2 === 0) ? n : n * 3
+  }
+  const mod = sum % 10
+  const check = mod === 0 ? 0 : 10 - mod
+  return partial + String(check)
+}
+
 export default function BookManagement(){
   const [books, setBooks] = useState(() => {
     const s = localStorage.getItem('gl_lib_books')
@@ -64,12 +79,13 @@ export default function BookManagement(){
     const copy = [...books]
     const status = (Number(form.qty) > 0) ? 'Sẵn có' : 'Hết sách'
     if (editIndex === -1) {
-      const newItem = { id: `B${Date.now()}`, ...form, qty: Number(form.qty), status }
+      const newItem = { id: `B${Date.now()}`, isbn: generateISBN13(), ...form, qty: Number(form.qty), status }
       copy.unshift(newItem)
       setBooks(copy)
       setNewRowId(newItem.id)
       setTimeout(() => setNewRowId(null), 700)
     } else {
+      // preserve existing isbn when editing
       copy[editIndex] = { ...copy[editIndex], ...form, qty: Number(form.qty), status }
       setBooks(copy)
     }
@@ -123,6 +139,7 @@ export default function BookManagement(){
           <thead>
             <tr className="text-slate-400 text-xs uppercase tracking-wider">
               <th className="px-4 py-2 font-medium">ID</th>
+              <th className="px-4 py-2 font-medium">ISBN</th>
               <th className="px-4 py-2 font-medium">Tên Sách</th>
               <th className="px-4 py-2 font-medium">Tác Giả</th>
               <th className="px-4 py-2 font-medium">Danh Mục</th>
@@ -138,6 +155,7 @@ export default function BookManagement(){
               return (
                 <tr key={book.id || i} className={`group ${isNew ? 'animate-add' : ''}`}>
                   <td className="px-4 py-3 font-mono text-slate-400">#{book.id}</td>
+                  <td className="px-4 py-3 font-mono text-slate-400">{book.isbn || '-'}</td>
                   <td className="px-4 py-3 font-bold text-white">{book.title}</td>
                   <td className="px-4 py-3 text-slate-300">{book.author}</td>
                   <td className="px-4 py-3"><span className="bg-white/10 px-2 py-1 rounded text-xs border border-white/10">{book.category}</span></td>
