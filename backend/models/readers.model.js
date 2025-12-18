@@ -1,21 +1,20 @@
 import mongoose from "mongoose";
 
-const restaurantSchema = new mongoose.Schema(
+const readerSchema = new mongoose.Schema(
     {
-       name:{
+       reader_code:{
         type: String,
+        unique: true,
         required: true
        },
-       address:{
+       name:{
         type: String,
         required: true,
        },
-       rating :{
-        type: Number,
-        min:0,
-        max: 5,
+       phone :{
+        type: String,
         required: true,
-       },
+       }
     },
     {
         timestamps: true, // tự động tạo các trường createdAt và updatedAt
@@ -26,4 +25,4 @@ const restaurantSchema = new mongoose.Schema(
 // virtual - accessor - get
 // virtual - mutator - set
 
-export const restaurantModel = mongoose.model('Restaurant', restaurantSchema);
+export const readerModel = mongoose.model('Reader', readerSchema);

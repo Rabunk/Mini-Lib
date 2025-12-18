@@ -1,5 +1,5 @@
-import { restaurantModel } from "../models/restaurants.model.js"
-import { foodModel } from "../models/foods.model.js"
+import { restaurantModel } from "../models/readers.model.js"
+import { foodModel } from "../models/user.model.js"
 
 // C1: dùng query thông thường
 // lấy thông tin nhà hàng và món ăn của nhà hàng đó.

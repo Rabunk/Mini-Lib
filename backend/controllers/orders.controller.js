@@ -1,4 +1,4 @@
-import { foodModel } from '../models/foods.model.js';
+import { foodModel } from '../models/user.model.js';
 import { orderItemModel } from '../models/orderItems.model.js';
 import { orderModel } from '../models/orders.model.js'
 

@@ -7,8 +7,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 export const handleRegister = async (req, res) => {
     try {
-        const { name, phone, password, role } = req.body;
-        if (!password) {
+        const { name, password, role } = req.body;
+        if (!password || !name) {
             return res.status(400).json({
                 message: 'Thiếu thông tin đăng ký'
             })

@@ -1,71 +1,105 @@
 import { connectDB } from "./config/database.config.js";
-import { restaurantModel } from "./models/restaurants.model.js";
+import { readerModel } from "./models/readers.model.js";
 import { userModel } from "./models/users.model.js";
-import { foodModel } from "./models/foods.model.js";
-import bcrypt from 'bcryptjs'
+import { bookModel } from "./models/books.model.js";
+import { loanModel } from "./models/loan.model.js";
+import bcrypt from "bcryptjs";
 
-
-console.log('Bắt đầu seed data');
+console.log("🌱 Bắt đầu seed data...");
 
 await connectDB();
 
-await userModel.deleteMany({});
-await foodModel.deleteMany({});
-await restaurantModel.deleteMany({});
+await Promise.all([
+  userModel.deleteMany({}),
+  readerModel.deleteMany({}),
+  bookModel.deleteMany({}),
+  loanModel.deleteMany({})
+]);
 
-const userName = [
-    'Nguyễn Minh Tú',
-    'Phạm Văn Tùng',
-    'Cao Minh Trang',
-    'Nguyễn Văn Tài',
-    'Đinh Đức Lộc'
-]
-for (let i = 0; i < 5; i++) {
-    const hashedPassword = await bcrypt.hash( `09878978${i}abc`, 10);
-    await userModel.create({
-        name: userName[i],
-        phone: `09878978${i}`,
-        password: hashedPassword
-    });
+/* ===================== USERS ===================== */
+const passwordHash = await bcrypt.hash("admin123", 10);
+
+const adminUser = await userModel.create({
+  username: "admin",
+  password: passwordHash,
+  role: "admin"
+});
+
+/* ===================== READERS ===================== */
+const readerNames = [
+  "Nguyễn Minh Tú",
+  "Phạm Văn Tùng",
+  "Cao Minh Trang",
+  "Nguyễn Văn Tài",
+  "Đinh Đức Lộc"
+];
+
+const readers = [];
+for (let i = 0; i < readerNames.length; i++) {
+  const reader = await readerModel.create({
+    reader_code: `DG00${i + 1}`,
+    name: readerNames[i],
+    phone: `090512345${i}`
+  });
+  readers.push(reader);
 }
 
-const dishes = [
-    "Phở",
-    "Bánh mì",
-    "Gỏi cuốn",
-    "Bún chả",
-    "Cơm tấm",
-    "Mì Quảng",
-    "Bánh xèo",
-    "Chả giò",
-    "Bánh bao",
-    "Bún riêu",
-    "Lẩu",
-    "Hủ tiếu"
+/* ===================== BOOKS ===================== */
+const booksData = [
+  { title: "Lập trình JavaScript", author: "Nguyễn Văn A", category: "Thiếu nhi", qty: 10 },
+  { title: "Tìm hiểu Python", author: "Trần Thị B", category: "Khoa học", qty: 5 },
+  { title: "Học về C++", author: "Lê Văn C", category: "Khoa học", qty: 7 },
+  { title: "Lịch sử thế giới", author: "Phạm Thị D", category: "Lịch sử", qty: 3 },
+  { title: "Văn học Việt Nam", author: "Hoàng Văn E", category: "Văn học", qty: 8 }
 ];
-const restaurants = [
-    "Quán ăn Bến Thành",
-    "Nhà hàng Phú Quốc",
-    "Quán Lúa Vàng"
-];
-for (let i = 0; i < 3; i++) {
-    const restaurant = await restaurantModel.create({
-        name: restaurants[i],
-        address: `Số nhà ${i * 2 + 1}, ngõ Ẩm Thực, Việt Nam`,
-        rating: Math.round(Math.random() * i) + 3
-    });
-    
-    for (let j = 0; j < 4; j++) {
-        const foodIndex = (i + 1) * (j + 1)  - 1
-        await foodModel.create({
-            name: dishes[foodIndex],
-            rating: Math.round(Math.random() * j) + 2,
-            price: 100000,
-            restaurant: restaurant._id
-        })
-    }
+
+const books = [];
+for (let i = 0; i < booksData.length; i++) {
+  const b = booksData[i];
+  const book = await bookModel.create({
+    code: `B00${i + 1}`,
+    isbn: `97831614841${i}`,
+    title: b.title,
+    author: b.author,
+    category: b.category,
+    qty: b.qty,
+    status: b.qty > 0 ? "Sẵn có" : "Hết sách"
+  });
+  books.push(book);
 }
 
+/* ===================== LOANS ===================== */
+await loanModel.create([
+  {
+    loan_code: "PM001",
+    reader: {
+      id: readers[0]._id,
+      name: readers[0].name
+    },
+    book: {
+      id: books[0]._id,
+      title: books[0].title
+    },
+    borrow_date: new Date("2023-10-25"),
+    return_date: new Date("2023-11-08"),
+    status: "Đã trả",
+    returned_at: new Date("2023-11-05")
+  },
+  {
+    loan_code: "PM002",
+    reader: {
+      id: readers[1]._id,
+      name: readers[1].name
+    },
+    book: {
+      id: books[1]._id,
+      title: books[1].title
+    },
+    borrow_date: new Date("2023-11-01"),
+    return_date: new Date("2023-11-15"),
+    status: "Đang mượn"
+  }
+]);
 
-console.log('Seed data thành công ✔');
+console.log("✅ Seed data thành công!");
 process.exit();

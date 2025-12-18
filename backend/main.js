@@ -20,6 +20,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', AuthRouter);
 app.use('/api/restaurants', RestaurantRouter);
 app.use('/api/orders', authentication, OrderRouter);
+app.use('/api/test', (req, res) => {
+    res.json({message: 'API is working'});
+});
 
 app.listen(APP_PORT, APP_HOST, () => {
     console.log(`Server running at http://${APP_HOST}:${APP_PORT}`);
