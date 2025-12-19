@@ -4,23 +4,20 @@ import 'dotenv/config'
 const JWT_SECRET = process.env.JWT_SECRET;
 // Authentication - Kiểm tra token và trả về thông tin user vào req.
 export const authentication = (req, res, next) => {
-    // lấy token từ headers
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
         return res.status(401).json({ message: 'Invalid authorization header' });
     }
     const token = authHeader.split(' ')[1];
-    // kiểm tra có gửi token hay không.
     if (!token) {
         return res.status(401).json({ message: 'Token is not provided.' });
     }
 
-    // kiểm tra token gửi lên bằng jwt.verify()
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
             return res.status(401).json({ message: 'Token is invalid.', error: `${err}` });
         }
-        req.user = decoded; // giải mã token thành công, lưu thông tin user vào req.
+        req.user = decoded; 
         next();
     });
 

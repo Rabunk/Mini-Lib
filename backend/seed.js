@@ -5,7 +5,7 @@ import { bookModel } from "./models/books.model.js";
 import { loanModel } from "./models/loan.model.js";
 import bcrypt from "bcryptjs";
 
-console.log("🌱 Bắt đầu seed data...");
+console.log("Bắt đầu seed data...");
 
 await connectDB();
 
@@ -58,7 +58,7 @@ for (let i = 0; i < booksData.length; i++) {
   const b = booksData[i];
   const book = await bookModel.create({
     code: `B00${i + 1}`,
-    isbn: `97831614841${i}`,
+    isbn: `978${i}`,
     title: b.title,
     author: b.author,
     category: b.category,
@@ -101,5 +101,5 @@ await loanModel.create([
   }
 ]);
 
-console.log("✅ Seed data thành công!");
+console.log("Seed data thành công!");
 process.exit();
