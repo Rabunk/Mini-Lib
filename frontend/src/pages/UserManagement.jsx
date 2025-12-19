@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
+import axiosClient from '../config/axiosClient'
 import { users as initialUsers } from '../data/user'
 
 export default function UserManagement() {
   const [query, setQuery] = useState('')
-  const [data, setData] = useState(() => {
-    const s = localStorage.getItem('gl_lib_users')
-    return s ? JSON.parse(s) : (initialUsers || [])
-  })
+  const [data, setData] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState({ id:'', name:'', phone:'', registered: '' })
   const [newRowId, setNewRowId] = useState(null)
@@ -16,60 +14,120 @@ export default function UserManagement() {
   const [nameError, setNameError] = useState('')
   const [phoneError, setPhoneError] = useState('')
 
-  useEffect(() => {
-    localStorage.setItem('gl_lib_users', JSON.stringify(data))
-  }, [data])
-
-  const handleSearch = (e) => {
-    setQuery(e.target.value)
+  /* ================= FETCH ================= */
+  const fetchReaders = async () => {
+    try {
+      const res = await axiosClient.get('/readers')
+      // expect res.data to be an array
+      if (Array.isArray(res.data)) setData(res.data)
+      else setData(res.data || [])
+    } catch (err) {
+      console.error(err)
+      setData((prev) => prev.length ? prev : (initialUsers || []))
+    }
   }
 
+  useEffect(() => {
+    fetchReaders()
+  }, [])
+
+  /* ================= SEARCH ================= */
+  const handleSearch = (e) => setQuery(e.target.value)
+
   const filtered = data.filter(
-    u =>
-      u.id.toLowerCase().includes(query.toLowerCase()) ||
-      u.name.toLowerCase().includes(query.toLowerCase()) ||
-      u.phone.toLowerCase().includes(query.toLowerCase())
+    u => {
+      const code = (u.reader_code || u.id || '').toString().toLowerCase()
+      const name = (u.name || '').toString().toLowerCase()
+      const phone = (u.phone || '').toString().toLowerCase()
+      const q = query.toLowerCase()
+      return code.includes(q) || name.includes(q) || phone.includes(q)
+    }
   )
 
+  /* ================= MODAL ================= */
   const openAdd = () => {
     setEditIndex(-1)
-    setForm({ id: `DG${String(data.length+1).padStart(3,'0')}`, name:'', phone:'', registered: new Date().toISOString().split('T')[0] })
-    setNameError(''); setPhoneError('')
+    setForm({
+      id: `DG${String((data && data.length) ? data.length + 1 : 1).padStart(3, '0')}`,
+      name: '',
+      phone: '',
+      registered: new Date().toISOString().split('T')[0]
+    })
+    setNameError('')
+    setPhoneError('')
     setModalOpen(true)
   }
 
   const openEdit = (idx) => {
-    setEditIndex(idx)
     const u = data[idx]
-    setForm({ id: u.id, name: u.name, phone: u.phone, registered: u.registered || '' })
-    setNameError(''); setPhoneError('')
+    setEditIndex(idx)
+    setForm({
+      id: u.reader_code || u.id || '',
+      name: u.name || '',
+      phone: u.phone || '',
+      registered: u.createdAt?.split('T')[0] || u.registered || ''
+    })
+    setNameError('')
+    setPhoneError('')
     setModalOpen(true)
   }
 
+  /* ================= VALIDATE ================= */
   const validate = () => {
     let ok = true
-    if (!form.name || form.name.trim().length < 8) { setNameError('Họ và tên phải ít nhất 8 ký tự'); ok = false } else setNameError('')
+    if (!form.name || form.name.trim().length < 8) {
+      setNameError('Họ và tên phải ít nhất 8 ký tự')
+      ok = false
+    } else setNameError('')
+
     const digits = (form.phone || '').replace(/\D/g,'')
-    if (!digits || digits.length < 10) { setPhoneError('Số điện thoại phải ít nhất 10 chữ số'); ok = false } else setPhoneError('')
+    if (!digits || digits.length < 10) {
+      setPhoneError('Số điện thoại phải ít nhất 10 chữ số')
+      ok = false
+    } else setPhoneError('')
     return ok
   }
 
-  const save = () => {
+  /* ================= SAVE ================= */
+  const save = async () => {
     if (!validate()) return
-    if (editIndex === -1) {
-      setData(d => [form, ...d])
-      setNewRowId(form.id)
-      setTimeout(() => setNewRowId(null), 700)
-    } else {
-      setData(d => d.map((x,i) => i === editIndex ? form : x))
+
+    try {
+      if (editIndex === -1) {
+        await axiosClient.post('/readers', {
+          reader_code: form.id,
+          name: form.name,
+          phone: form.phone
+        })
+        setNewRowId(form.id)
+        setTimeout(() => setNewRowId(null), 700)
+      } else {
+        const readerId = data[editIndex]._id || data[editIndex].id
+        if (!readerId) throw new Error('Không tìm thấy id độc giả để cập nhật')
+        await axiosClient.put(`/readers/${readerId}`, {
+          name: form.name,
+          phone: form.phone
+        })
+      }
+
+      setModalOpen(false)
+      fetchReaders()
+    } catch (err) {
+      console.error(err)
     }
-    setModalOpen(false)
   }
 
-  const remove = (id) => {
-    setData(d => d.filter(x => x.id !== id))
+  /* ================= DELETE ================= */
+  const remove = async (id) => {
+    try {
+      await axiosClient.delete(`/readers/${id}`)
+      fetchReaders()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
+  /* ================= UI  ================= */
   return (
     <div className="space-y-6 h-full flex flex-col animate-fade-in" id="view-users">
       <div className="glass-panel rounded-2xl p-6 flex items-center justify-between">
@@ -119,17 +177,20 @@ export default function UserManagement() {
           </thead>
           <tbody className="text-sm text-slate-200">
             {filtered.map((u, idx) => (
-              <tr key={u.id} className={`group ${u.id === newRowId ? 'animate-add' : ''}`}>
-                <td className="px-4 py-3 font-mono text-slate-400">{u.id}</td>
+              <tr key={u._id || u.reader_code || u.id || idx} className={`group ${u.reader_code === newRowId ? 'animate-add' : ''}`}>
+                <td className="px-4 py-3 font-mono text-slate-400">{u.reader_code || u.id || '-'}</td>
                 <td className="px-4 py-3 font-bold text-white">{u.name}</td>
                 <td className="px-4 py-3 text-slate-300">{u.phone}</td>
-                <td className="px-4 py-3 text-slate-300">{u.registered}</td>
+                <td className="px-4 py-3 text-slate-300">{(u.createdAt || u.registered || '').split('T')[0]}</td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => openEdit(idx)} className="text-slate-400 hover:text-blue-400 transition-colors mr-2"><i className="fa-solid fa-pen-to-square"></i></button>
-                  <button onClick={() => remove(u.id)} className="text-slate-400 hover:text-rose-400 transition-colors"><i className="fa-solid fa-trash"></i></button>
+                  <button onClick={() => remove(u._id || u.id)} className="text-slate-400 hover:text-rose-400 transition-colors"><i className="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan="5" className="text-center text-slate-500 py-4">Không có độc giả</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -141,7 +202,7 @@ export default function UserManagement() {
             <div className="space-y-3">
               <div>
                 <label className="text-sm text-slate-300">Mã độc giả</label>
-                <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.id} onChange={e => setForm(f => ({...f, id: e.target.value}))} />
+                <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.id} disabled />
               </div>
               <div>
                 <label className="text-sm text-slate-300">Họ và tên</label>

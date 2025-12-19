@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { library as initialBooks } from '../data/library'
 import { users as initialUsers } from '../data/user'
+import { loanService } from '../config/loan.service.js'
 
 export default function BorrowAndReturn() {
   const [query, setQuery] = useState('')
@@ -13,12 +14,12 @@ export default function BorrowAndReturn() {
     const s = localStorage.getItem('gl_lib_users')
     return s ? JSON.parse(s) : (initialUsers || [])
   })
-  const [loans, setLoans] = useState(() => {
-    const s = localStorage.getItem('gl_lib_loans')
-    return s ? JSON.parse(s) : [
-      { id: 'PM001', member: 'Nguyễn Văn A', book: 'Nhà Giả Kim', date: '2023-10-25', dueDate: '2023-11-08', status: 'Đang mượn', fine: null },
-      { id: 'PM002', member: 'Trần Thị B', book: 'Tuổi Trẻ Đáng Giá Bao Nhiêu', date: '2023-10-20', dueDate: '2023-11-03', status: 'Đã trả', fine: null }
-    ]
+  useEffect(() => {
+    loanService.getAll().then(res => {
+      setLoans(res.data)
+    }).catch(err => {
+      console.error('Failed to fetch loans:', err)
+    })
   })
 
   const [loanModal, setLoanModal] = useState(false)

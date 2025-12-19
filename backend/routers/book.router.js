@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.get('/',  getAllBooks);
 router.get('/:id' , getBookById);
-router.post('/' , isAdmin, addNewBook);
-router.put('/:id' , isAdmin, updateBook);
-router.delete('/:id' , isAdmin, deleteBook);
+router.post('/' , addNewBook);
+router.put('/:id' , updateBook);
+router.delete('/:id' , deleteBook);
 
 export default router;

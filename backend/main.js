@@ -12,7 +12,7 @@ import cors from 'cors';
 const APP_PORT = process.env.APP_PORT;
 const APP_HOST = process.env.APP_HOST;
 const app = express();
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: ['https://mini-lib-eta.vercel.app','http://localhost:5173'], credentials: true }));
 
 await connectDB();
 
@@ -27,7 +27,9 @@ app.use('/api/readers', ReaderRouter);
 app.use('/api/test', (req, res) => {
     res.json({message: 'API is working'});
 });
-
+app.use('/', (req, res) => {
+    res.send('Welcome to Mini Library API');
+});
 
 app.listen(APP_PORT, APP_HOST, () => {
     console.log(`Server running at http://${APP_HOST}:${APP_PORT}`);
