@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
+import axiosClient from '../config/axiosClient'
 import { library as initialLibrary } from '../data/library'
 
 const CATEGORIES = ['Thiếu nhi', 'Truyện tranh', 'Lịch sử', 'Khoa học', 'Tiểu thuyết', 'Văn học']
@@ -8,7 +9,7 @@ function generateISBN13() {
   const prefix = '978'
   let body = ''
   for (let i = 0; i < 9; i++) body += String(Math.floor(Math.random() * 10))
-  const partial = prefix + body 
+  const partial = prefix + body
   let sum = 0
   for (let i = 0; i < partial.length; i++) {
     const n = Number(partial[i])
@@ -20,10 +21,7 @@ function generateISBN13() {
 }
 
 export default function BookManagement(){
-  const [books, setBooks] = useState(() => {
-    const s = localStorage.getItem('gl_lib_books')
-    return s ? JSON.parse(s) : (initialLibrary || [])
-  })
+  const [books, setBooks] = useState([])
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -35,8 +33,20 @@ export default function BookManagement(){
   const [authorError, setAuthorError] = useState('')
 
   useEffect(() => {
-    localStorage.setItem('gl_lib_books', JSON.stringify(books))
-  }, [books])
+    fetchBooks()
+  }, [])
+
+  const fetchBooks = async () => {
+    try {
+      const res = await axiosClient.get('/books')
+      const payload = res.data
+      setBooks(Array.isArray(payload) ? payload : (payload?.data || []))
+    } catch (err) {
+      console.error(err)
+      const s = localStorage.getItem('gl_lib_books')
+      setBooks(s ? JSON.parse(s) : (initialLibrary || []))
+    }
+  }
 
   const validate = () => {
     let ok = true
@@ -54,8 +64,8 @@ export default function BookManagement(){
   const handleSearch = (e) => setQuery(e.target.value || '')
 
   const filtered = books.filter(b =>
-    (b.title.toLowerCase().includes(query.toLowerCase()) ||
-     b.author.toLowerCase().includes(query.toLowerCase()))
+    ((b.title || '').toLowerCase().includes(query.toLowerCase()) ||
+     (b.author || '').toLowerCase().includes(query.toLowerCase()))
     && (categoryFilter ? b.category === categoryFilter : true)
   )
 
@@ -69,32 +79,68 @@ export default function BookManagement(){
   const openEdit = (idx) => {
     setEditIndex(idx)
     const b = books[idx]
-    setForm({ title: b.title, author: b.author, category: b.category || CATEGORIES[0], qty: b.qty || 0 })
+    setForm({ title: b.title || '', author: b.author || '', category: b.category || CATEGORIES[0], qty: b.qty || 0 })
     setTitleError(''); setAuthorError('')
     setModalOpen(true)
   }
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return
-    const copy = [...books]
-    const status = (Number(form.qty) > 0) ? 'Sẵn có' : 'Hết sách'
-    if (editIndex === -1) {
-      const newItem = { id: `B${Date.now()}`, isbn: generateISBN13(), ...form, qty: Number(form.qty), status }
-      copy.unshift(newItem)
-      setBooks(copy)
-      setNewRowId(newItem.id)
+    try {
+      if (editIndex === -1) {
+        const payload = {
+          code: `B${Date.now()}`,
+          isbn: generateISBN13(),
+          title: form.title,
+          author: form.author,
+          category: form.category,
+          qty: Number(form.qty)
+        }
+        const res = await axiosClient.post('/books', payload)
+        setNewRowId(res.data?._id || res.data?.code || payload.code)
+      } else {
+        const existing = books[editIndex]
+        const bookId = existing._id
+        const payload = { title: form.title, author: form.author, category: form.category, qty: Number(form.qty) }
+        if (bookId) {
+          await axiosClient.put(`/books/${bookId}`, payload)
+        } else {
+          const copy = [...books]
+          copy[editIndex] = { ...copy[editIndex], ...payload, status: (Number(form.qty) > 0) ? 'Sẵn có' : 'Hết sách' }
+          setBooks(copy)
+        }
+      }
+      setModalOpen(false)
+      await fetchBooks()
       setTimeout(() => setNewRowId(null), 700)
-    } else {
-      // preserve existing isbn when editing
-      copy[editIndex] = { ...copy[editIndex], ...form, qty: Number(form.qty), status }
-      setBooks(copy)
+    } catch (err) {
+      console.error(err)
+      // fallback local create on error
+      if (editIndex === -1) {
+        const status = (Number(form.qty) > 0) ? 'Sẵn có' : 'Hết sách'
+        const newItem = { id: `B${Date.now()}`, isbn: generateISBN13(), ...form, qty: Number(form.qty), status }
+        setBooks(prev => [newItem, ...prev])
+        setNewRowId(newItem.id)
+        setTimeout(() => setNewRowId(null), 700)
+        setModalOpen(false)
+      }
     }
-    setModalOpen(false)
   }
 
-  const remove = (idx) => {
-    const copy = books.filter((_,i) => i !== idx)
-    setBooks(copy)
+  const remove = async (idx) => {
+    const toRemove = books[idx]
+    const id = toRemove._id
+    if (!id) {
+      setBooks(prev => prev.filter((_, i) => i !== idx))
+      return
+    }
+    try {
+      await axiosClient.delete(`/books/${id}`)
+      fetchBooks()
+    } catch (err) {
+      console.error(err)
+      setBooks(prev => prev.filter((_, i) => i !== idx))
+    }
   }
 
   return (
@@ -150,20 +196,20 @@ export default function BookManagement(){
           </thead>
           <tbody className="text-sm text-slate-200">
             {filtered.map((book, i) => {
-              const statusClass = book.status === 'Sẵn có' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-              const isNew = book.id === newRowId
+              const statusClass = (book.status === 'Sẵn có' || (Number(book.qty) > 0)) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+              const isNew = (book.code || book._id || book.id) === newRowId
               return (
-                <tr key={book.id || i} className={`group ${isNew ? 'animate-add' : ''}`}>
-                  <td className="px-4 py-3 font-mono text-slate-400">#{book.id}</td>
+                <tr key={book._id || book.code || book.id || i} className={`group ${isNew ? 'animate-add' : ''}`}>
+                  <td className="px-4 py-3 font-mono text-slate-400">#{book.code || (book._id ? book._id.slice(-6) : book.id || i)}</td>
                   <td className="px-4 py-3 font-mono text-slate-400">{book.isbn || '-'}</td>
                   <td className="px-4 py-3 font-bold text-white">{book.title}</td>
                   <td className="px-4 py-3 text-slate-300">{book.author}</td>
                   <td className="px-4 py-3"><span className="bg-white/10 px-2 py-1 rounded text-xs border border-white/10">{book.category}</span></td>
                   <td className="px-4 py-3 text-center">{book.qty}</td>
-                  <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full border ${statusClass}`}>{book.status}</span></td>
+                  <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full border ${statusClass}`}>{(Number(book.qty) > 0) ? 'Sẵn có' : 'Hết sách'}</span></td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => openEdit(books.indexOf(book))} className="text-slate-400 hover:text-blue-400 transition-colors mr-2"><i className="fa-solid fa-pen-to-square"></i></button>
-                    <button onClick={() => remove(books.indexOf(book))} className="text-slate-400 hover:text-rose-400 transition-colors"><i className="fa-solid fa-trash"></i></button>
+                    <button onClick={() => openEdit(i)} className="text-slate-400 hover:text-blue-400 transition-colors mr-2"><i className="fa-solid fa-pen-to-square"></i></button>
+                    <button onClick={() => remove(i)} className="text-slate-400 hover:text-rose-400 transition-colors"><i className="fa-solid fa-trash"></i></button>
                   </td>
                 </tr>
               )

@@ -23,18 +23,22 @@ export const getBookById = async (req, res) => {
 };
 
 export const addNewBook = async (req, res) => {
-    try {
-        const { code, isbn, title, author, category, qty } = req.body;
-        const existingBook = await bookModel.findOne({ code });
-        if (existingBook) {
-            return res.status(400).json({ message: "Mã sách đã tồn tại" });
-        }
-        const newBook = new bookModel({ code, isbn, title, author, category, qty });
-        await newBook.save();
-        res.status(201).json(newBook);
-    } catch (error) {
-        res.status(500).json({ message: "Lỗi server" });
+  try {
+    const { code, isbn, title, author, category, qty } = req.body;
+    const existingBook = await bookModel.findOne({ code });
+    if (existingBook) {
+      return res.status(400).json({ message: "Mã sách đã tồn tại" });
     }
+
+    // ensure status is set according to qty (required by schema)
+    const status = Number(qty) > 0 ? "Sẵn có" : "Hết sách";
+
+    const newBook = new bookModel({ code, isbn, title, author, category, qty, status });
+    await newBook.save();
+    res.status(201).json(newBook);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
 };
 
 export const updateBook = async (req, res) => {

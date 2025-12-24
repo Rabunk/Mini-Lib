@@ -7,7 +7,7 @@ export const loanService = {
     borrow(data) {
         return axiosClient.post('/loans/borrow', data);
     },
-    returnBook(id) {
+    returnBook(id, data) {
         return axiosClient.post(`/loans/return/${id}`, data);
     }
 };

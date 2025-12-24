@@ -14,11 +14,9 @@ export default function UserManagement() {
   const [nameError, setNameError] = useState('')
   const [phoneError, setPhoneError] = useState('')
 
-  /* ================= FETCH ================= */
   const fetchReaders = async () => {
     try {
       const res = await axiosClient.get('/readers')
-      // expect res.data to be an array
       if (Array.isArray(res.data)) setData(res.data)
       else setData(res.data || [])
     } catch (err) {
@@ -31,7 +29,6 @@ export default function UserManagement() {
     fetchReaders()
   }, [])
 
-  /* ================= SEARCH ================= */
   const handleSearch = (e) => setQuery(e.target.value)
 
   const filtered = data.filter(
@@ -44,7 +41,6 @@ export default function UserManagement() {
     }
   )
 
-  /* ================= MODAL ================= */
   const openAdd = () => {
     setEditIndex(-1)
     setForm({
@@ -72,7 +68,6 @@ export default function UserManagement() {
     setModalOpen(true)
   }
 
-  /* ================= VALIDATE ================= */
   const validate = () => {
     let ok = true
     if (!form.name || form.name.trim().length < 8) {
@@ -88,7 +83,6 @@ export default function UserManagement() {
     return ok
   }
 
-  /* ================= SAVE ================= */
   const save = async () => {
     if (!validate()) return
 
@@ -117,7 +111,6 @@ export default function UserManagement() {
     }
   }
 
-  /* ================= DELETE ================= */
   const remove = async (id) => {
     try {
       await axiosClient.delete(`/readers/${id}`)
@@ -127,7 +120,7 @@ export default function UserManagement() {
     }
   }
 
-  /* ================= UI  ================= */
+  /* ================= UI  ================= */ 
   return (
     <div className="space-y-6 h-full flex flex-col animate-fade-in" id="view-users">
       <div className="glass-panel rounded-2xl p-6 flex items-center justify-between">
