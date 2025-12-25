@@ -9,3 +9,60 @@
 .fw-bold { font-weight: 700; }
 .fs-2 { font-size: 1.5rem; }
 
+/* background orbs */
+.glass-bg-animation {
+  position: absolute;
+  inset: 0;
+  z-index: 0; /* behind content which uses z-10 */
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.65;
+  transform: translate3d(0,0,0);
+  will-change: transform, opacity;
+}
+
+.orb-1 {
+  width: 360px;
+  height: 360px;
+  left: -10%;
+  top: -18%;
+  background: radial-gradient(circle at 30% 30%, rgba(99,102,241,0.95), rgba(59,130,246,0.45));
+  animation: float 12s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 420px;
+  height: 420px;
+  right: -16%;
+  top: 6%;
+  background: radial-gradient(circle at 70% 30%, rgba(139,92,246,0.9), rgba(16,185,129,0.28));
+  animation: float 18s ease-in-out infinite;
+}
+
+.orb-3 {
+  width: 520px;
+  height: 520px;
+  left: 25%;
+  bottom: -26%;
+  background: radial-gradient(circle at 50% 50%, rgba(236,72,153,0.9), rgba(99,102,241,0.18));
+  animation: float 16s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0) scale(1); opacity: 0.65; }
+  50% { transform: translateY(24px) scale(1.03); opacity: 0.75; }
+  100% { transform: translateY(0) scale(1); opacity: 0.65; }
+}
+
+/* ensure content sits above orbs */
+#content-area, main, .sidebar {
+  position: relative;
+  z-index: 10;
+}
+

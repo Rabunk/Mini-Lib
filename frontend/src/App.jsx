@@ -23,7 +23,7 @@ function App() {
   const hideSiderBar = location.pathname === "/";
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen relative">
       <div className="glass-bg-animation">
         <div className="orb orb-1"></div>
         <div className="orb orb-2"></div>

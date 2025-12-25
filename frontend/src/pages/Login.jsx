@@ -26,7 +26,6 @@ export default function Login() {
 
       const { token, user } = res.data
 
-      // lưu token & user
       localStorage.setItem('gl_token', token)
       localStorage.setItem('gl_user', JSON.stringify(user))
 
@@ -123,7 +122,7 @@ export default function Login() {
                   onClick={confirmSuccess}
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white"
                 >
-                  Vào Dashboard
+                  Xác nhận
                 </button>
               </div>
             </div>

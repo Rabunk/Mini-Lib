@@ -12,7 +12,7 @@ import cors from 'cors';
 const APP_PORT = process.env.APP_PORT;
 const APP_HOST = process.env.APP_HOST;
 const app = express();
-app.use(cors({ origin: ['https://mini-lib-eta.vercel.app','http://localhost:5173'], credentials: true }));
+app.use(cors({ origin: ['https://mini-lib-eta.vercel.app','http://localhost:5173','https://mini-lib-rabunks-projects.vercel.app'], credentials: true }));
 
 await connectDB();
 

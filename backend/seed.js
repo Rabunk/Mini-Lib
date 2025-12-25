@@ -68,38 +68,5 @@ for (let i = 0; i < booksData.length; i++) {
   books.push(book);
 }
 
-/* ===================== LOANS ===================== */
-await loanModel.create([
-  {
-    loan_code: "PM001",
-    reader: {
-      id: readers[0]._id,
-      name: readers[0].name
-    },
-    book: {
-      id: books[0]._id,
-      title: books[0].title
-    },
-    borrow_date: new Date("2023-10-25"),
-    return_date: new Date("2023-11-08"),
-    status: "Đã trả",
-    returned_at: new Date("2023-11-05")
-  },
-  {
-    loan_code: "PM002",
-    reader: {
-      id: readers[1]._id,
-      name: readers[1].name
-    },
-    book: {
-      id: books[1]._id,
-      title: books[1].title
-    },
-    borrow_date: new Date("2023-11-01"),
-    return_date: new Date("2023-11-15"),
-    status: "Đang mượn"
-  }
-]);
-
 console.log("Seed data thành công!");
 process.exit();
