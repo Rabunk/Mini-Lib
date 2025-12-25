@@ -20,7 +20,6 @@ ChartJS.register(
   Legend
 )
 
-/* ===== Utils ===== */
 function getLastNMonths(n = 6) {
   const labels = []
   const now = new Date()
@@ -38,7 +37,6 @@ export default function Dashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  /* ===== Fetch dashboard ===== */
   useEffect(() => {
     axiosClient
       .get('/dashboard/summary')
@@ -54,7 +52,6 @@ export default function Dashboard() {
 
   const months = useMemo(() => getLastNMonths(6), [])
 
-  /* ===== Chart data ===== */
   const chartData = useMemo(() => {
     if (!data) return null
 
@@ -128,7 +125,6 @@ export default function Dashboard() {
 
   return (
     <>
-      {/* ===== Header ===== */}
       <div className="glass-panel mb-6 rounded-2xl p-6 flex justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Tổng Quan Hệ Thống</h1>
@@ -136,7 +132,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ===== Summary cards ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card title="Tổng đầu sách (bản)" value={totalCopies} note={`${totalTitles} tựa`} />
         <Card title="Đang cho mượn" value={activeLoans} />
@@ -144,7 +139,6 @@ export default function Dashboard() {
         <Card title="Quá hạn" value={overdue} danger />
       </div>
 
-      {/* ===== Chart + recent ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-panel lg:col-span-2 p-6 rounded-2xl">
           <h3 className="font-bold text-white mb-4">Biểu đồ mượn / trả (6 tháng)</h3>
@@ -182,7 +176,6 @@ export default function Dashboard() {
   )
 }
 
-/* ===== Card component ===== */
 function Card({ title, value, note, danger }) {
   return (
     <div className="glass-panel p-6 rounded-2xl">

@@ -43,7 +43,6 @@ export default function BorrowAndReturn() {
     loadAll()
   }, [])
 
-  /* ================= HELPERS ================= */
   const formatDate = (d) => {
     if (!d) return '-'
     const dt = new Date(d)
