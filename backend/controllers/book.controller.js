@@ -24,7 +24,7 @@ export const getBookById = async (req, res) => {
 
 export const addNewBook = async (req, res) => {
   try {
-    const { code, isbn, title, author, category, qty } = req.body;
+    const { code, isbn, title, author, category, qty, location } = req.body;
     const existingBook = await bookModel.findOne({ code });
     if (existingBook) {
       return res.status(400).json({ message: "Mã sách đã tồn tại" });
@@ -33,7 +33,7 @@ export const addNewBook = async (req, res) => {
     // ensure status is set according to qty (required by schema)
     const status = Number(qty) > 0 ? "Sẵn có" : "Hết sách";
 
-    const newBook = new bookModel({ code, isbn, title, author, category, qty, status });
+    const newBook = new bookModel({ code, isbn, title, author, category, qty, location, status });
     await newBook.save();
     res.status(201).json(newBook);
   } catch (error) {
@@ -44,7 +44,7 @@ export const addNewBook = async (req, res) => {
 export const updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, isbn, title, author, category, qty } = req.body;
+    const { code, isbn, title, author, category, qty, location } = req.body;
 
     const book = await bookModel.findById(id);
     if (!book) {
@@ -57,6 +57,7 @@ export const updateBook = async (req, res) => {
     book.author = author ?? book.author;
     book.category = category ?? book.category;
     book.qty = qty ?? book.qty;
+    book.location = location ?? book.location;
     book.status = book.qty > 0 ? "Sẵn có" : "Hết sách";
 
     await book.save();
@@ -80,4 +81,3 @@ export const deleteBook = async (req, res) => {
         res.status(500).json({ message: "Lỗi server" });
     }
 };
- 

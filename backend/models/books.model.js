@@ -30,6 +30,10 @@ const bookSchema = new mongoose.Schema(
         required: true,
         min: 0
        },
+      location: {
+        type: String,
+        default: ''
+      },
        status: {
         type: String,
         enum: ["Sẵn có", "Hết sách"],

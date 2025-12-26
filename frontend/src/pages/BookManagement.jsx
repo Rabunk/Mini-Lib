@@ -26,7 +26,7 @@ export default function BookManagement(){
   const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editIndex, setEditIndex] = useState(-1)
-  const [form, setForm] = useState({ title:'', author:'', category:'', qty:0 })
+  const [form, setForm] = useState({ title:'', author:'', category:'', qty:0, location: '' })
   const [newRowId, setNewRowId] = useState(null)
 
   const [titleError, setTitleError] = useState('')
@@ -71,7 +71,7 @@ export default function BookManagement(){
 
   const openAdd = () => {
     setEditIndex(-1)
-    setForm({ title:'', author:'', category: CATEGORIES[0], qty:0 })
+    setForm({ title:'', author:'', category: CATEGORIES[0], qty:0, location: '' })
     setTitleError(''); setAuthorError('')
     setModalOpen(true)
   }
@@ -79,7 +79,7 @@ export default function BookManagement(){
   const openEdit = (idx) => {
     setEditIndex(idx)
     const b = books[idx]
-    setForm({ title: b.title || '', author: b.author || '', category: b.category || CATEGORIES[0], qty: b.qty || 0 })
+    setForm({ title: b.title || '', author: b.author || '', category: b.category || CATEGORIES[0], qty: b.qty || 0, location: b.location || '' })
     setTitleError(''); setAuthorError('')
     setModalOpen(true)
   }
@@ -94,14 +94,15 @@ export default function BookManagement(){
           title: form.title,
           author: form.author,
           category: form.category,
-          qty: Number(form.qty)
+          qty: Number(form.qty),
+          location: form.location
         }
         const res = await axiosClient.post('/books', payload)
         setNewRowId(res.data?._id || res.data?.code || payload.code)
       } else {
         const existing = books[editIndex]
         const bookId = existing._id
-        const payload = { title: form.title, author: form.author, category: form.category, qty: Number(form.qty) }
+        const payload = { title: form.title, author: form.author, category: form.category, qty: Number(form.qty), location: form.location }
         if (bookId) {
           await axiosClient.put(`/books/${bookId}`, payload)
         } else {
@@ -186,6 +187,7 @@ export default function BookManagement(){
             <tr className="text-slate-400 text-xs uppercase tracking-wider">
               <th className="px-4 py-2 font-medium">ID</th>
               <th className="px-4 py-2 font-medium">ISBN</th>
+              <th className="px-4 py-2 font-medium">Vị trí</th>
               <th className="px-4 py-2 font-medium">Tên Sách</th>
               <th className="px-4 py-2 font-medium">Tác Giả</th>
               <th className="px-4 py-2 font-medium">Danh Mục</th>
@@ -202,6 +204,7 @@ export default function BookManagement(){
                 <tr key={book._id || book.code || book.id || i} className={`group ${isNew ? 'animate-add' : ''}`}>
                   <td className="px-4 py-3 font-mono text-slate-400">#{book.code || (book._id ? book._id.slice(-6) : book.id || i)}</td>
                   <td className="px-4 py-3 font-mono text-slate-400">{book.isbn || '-'}</td>
+                  <td className="px-4 py-3 text-slate-300">{book.location || '-'}</td>
                   <td className="px-4 py-3 font-bold text-white">{book.title}</td>
                   <td className="px-4 py-3 text-slate-300">{book.author}</td>
                   <td className="px-4 py-3"><span className="bg-white/10 px-2 py-1 rounded text-xs border border-white/10">{book.category}</span></td>
@@ -244,6 +247,11 @@ export default function BookManagement(){
                   <label className="text-sm text-slate-300">Số lượng</label>
                   <input type="number" min="0" className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.qty} onChange={e => setForm(f => ({...f, qty: Number(e.target.value)}))} />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-slate-300">Vị trí</label>
+                <input className="glass-input mt-2 w-full rounded-lg px-3 py-2" value={form.location} onChange={e => setForm(f => ({...f, location: e.target.value}))} placeholder="Kệ A1, Tầng 2..." />
               </div>
 
               <div className="flex justify-end gap-3">
